@@ -218,7 +218,7 @@ impl<T> TextBox<T> {
 
         let size = size.into();
         self.text_mut().borrow_mut().set_text_size(size.clone());
-        self.placeholder.set_text_size(size);
+        self.placeholder_layout.set_text_size(size);
     }
 
     /// Set the font.
@@ -236,7 +236,7 @@ impl<T> TextBox<T> {
         }
         let font = font.into();
         self.text_mut().borrow_mut().set_font(font.clone());
-        self.placeholder.set_font(font);
+        self.placeholder_layout.set_font(font);
     }
 
     /// Set the [`TextAlignment`] for this `TextBox``.
