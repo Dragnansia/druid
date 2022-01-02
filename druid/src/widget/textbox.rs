@@ -114,6 +114,27 @@ impl<T: EditableText + TextStorage> TextBox<T> {
         this
     }
 
+    /// Return a new textbox suitable for protected (password) input.
+    ///
+    /// This is a hack, and has some constraints / limitations / problems.
+    /// Specifically, all measurement and cursor positioning is done on the
+    /// actual password text. To make this kind of work, we need to use a
+    /// monospace font, so that cursors and selections *generally* line up with
+    /// the replacement glyphs.
+    ///
+    /// Unfortunately, this only works for glyphs that respect the mono width.
+    /// If you enter glyphs that do not (like wide east asian characters, emoji,
+    /// etc) then the cursor positions and selections will get weird.
+    ///
+    /// This obviously isn't ideal, but it feels like a reasonable tradeoff
+    /// for the time being.
+    pub fn protected() -> Self {
+        let mut this = TextBox::new();
+        this.text_mut().borrow_mut().set_protected_input(true);
+        this.set_font(FontDescriptor::new(druid::FontFamily::MONOSPACE));
+        this
+    }
+
     /// If `true` (and this is a [`multiline`] text box) lines will be wrapped
     /// at the maximum layout width.
     ///
@@ -196,11 +217,8 @@ impl<T> TextBox<T> {
         }
 
         let size = size.into();
-        self.text_mut()
-            .borrow_mut()
-            .layout
-            .set_text_size(size.clone());
-        self.placeholder_layout.set_text_size(size);
+        self.text_mut().borrow_mut().set_text_size(size.clone());
+        self.placeholder.set_text_size(size);
     }
 
     /// Set the font.
@@ -217,8 +235,8 @@ impl<T> TextBox<T> {
             return;
         }
         let font = font.into();
-        self.text_mut().borrow_mut().layout.set_font(font.clone());
-        self.placeholder_layout.set_font(font);
+        self.text_mut().borrow_mut().set_font(font.clone());
+        self.placeholder.set_font(font);
     }
 
     /// Set the [`TextAlignment`] for this `TextBox``.
