@@ -18,6 +18,7 @@ use std::any::Any;
 use std::time::Duration;
 
 use crate::application::Application;
+use crate::backend::window as backend;
 use crate::common_util::Counter;
 use crate::dialog::{FileDialogOptions, FileInfo};
 use crate::error::Error;
@@ -25,7 +26,6 @@ use crate::keyboard::KeyEvent;
 use crate::kurbo::{Insets, Point, Rect, Size};
 use crate::menu::Menu;
 use crate::mouse::{Cursor, CursorDesc, MouseEvent};
-use crate::platform::window as platform;
 use crate::region::Region;
 use crate::scale::Scale;
 use crate::text::{Event, InputHandler};
@@ -83,10 +83,10 @@ impl TextFieldToken {
     }
 }
 
-//NOTE: this has a From<platform::Handle> impl for construction
+//NOTE: this has a From<backend::Handle> impl for construction
 /// A handle that can enqueue tasks on the window loop.
 #[derive(Clone)]
-pub struct IdleHandle(platform::IdleHandle);
+pub struct IdleHandle(backend::IdleHandle);
 
 impl IdleHandle {
     /// Add an idle handler, which is called (once) when the message loop
@@ -148,16 +148,16 @@ impl FileDialogToken {
 /// Levels in the window system - Z order for display purposes.
 /// Describes the purpose of a window and should be mapped appropriately to match platform
 /// conventions.
-#[derive(Copy, Clone, Debug)]
+#[derive(Clone, PartialEq)]
 pub enum WindowLevel {
     /// A top level app window.
     AppWindow,
     /// A window that should stay above app windows - like a tooltip
-    Tooltip,
+    Tooltip(WindowHandle),
     /// A user interface element such as a dropdown menu or combo box
-    DropDown,
+    DropDown(WindowHandle),
     /// A modal dialog
-    Modal,
+    Modal(WindowHandle),
 }
 
 /// Contains the different states a Window can be in.
@@ -169,8 +169,8 @@ pub enum WindowState {
 }
 
 /// A handle to a platform window object.
-#[derive(Clone, Default)]
-pub struct WindowHandle(platform::WindowHandle);
+#[derive(Clone, Default, PartialEq)]
+pub struct WindowHandle(pub(crate) backend::WindowHandle);
 
 impl WindowHandle {
     /// Make this window visible.
@@ -216,14 +216,20 @@ impl WindowHandle {
         self.0.show_titlebar(show_titlebar)
     }
 
-    /// Sets the position of the window in [display points](crate::Scale), relative to the origin of the
-    /// virtual screen.
+    /// Sets the position of the window.
+    ///
+    /// The position is given in [display points], measured relative to the parent window if there
+    /// is one, or the origin of the virtual screen if there is no parent.
+    ///
+    /// [display points]: crate::Scale
     pub fn set_position(&self, position: impl Into<Point>) {
         self.0.set_position(position.into())
     }
 
-    /// Returns the position of the top left corner of the window in
-    /// [display points], relative to the origin of the virtual screen.
+    /// Returns the position of the top left corner of the window.
+    ///
+    /// The position is returned in [display points], measured relative to the parent window if
+    /// there is one, of the origin of the virtual screen if there is no parent.
     ///
     /// [display points]: crate::Scale
     pub fn get_position(&self) -> Point {
@@ -266,15 +272,6 @@ impl WindowHandle {
     /// [display points]: crate::Scale
     pub fn get_size(&self) -> Size {
         self.0.get_size()
-    }
-
-    /// Sets the [`WindowLevel`](crate::WindowLevel), the z-order in the Window system / compositor
-    ///
-    /// We do not currently have a getter method, mostly because the system's levels aren't a
-    /// perfect one-to-one map to `druid_shell`'s levels. A getter method may be added in the
-    /// future.
-    pub fn set_level(&self, level: WindowLevel) {
-        self.0.set_level(level)
     }
 
     /// Bring this window to the front of the window stack and give it focus.
@@ -429,14 +426,14 @@ unsafe impl HasRawWindowHandle for WindowHandle {
 }
 
 /// A builder type for creating new windows.
-pub struct WindowBuilder(platform::WindowBuilder);
+pub struct WindowBuilder(backend::WindowBuilder);
 
 impl WindowBuilder {
     /// Create a new `WindowBuilder`.
     ///
     /// Takes the [`Application`](crate::Application) that this window is for.
     pub fn new(app: Application) -> WindowBuilder {
-        WindowBuilder(platform::WindowBuilder::new(app.platform_app))
+        WindowBuilder(backend::WindowBuilder::new(app.backend_app))
     }
 
     /// Set the [`WinHandler`] for this window.
@@ -487,10 +484,12 @@ impl WindowBuilder {
         self.0.set_transparent(transparent)
     }
 
-    /// Sets the initial window position in [display points], relative to the origin of the
-    /// virtual screen.
+    /// Sets the initial window position in display points.
+    /// For windows with a parent, the position is relative to the parent.
+    /// For windows without a parent, it is relative to the origin of the virtual screen.
+    /// See also [set_level]
     ///
-    /// [display points]: crate::Scale
+    /// [set_level]: crate::WindowBuilder::set_level
     pub fn set_position(&mut self, position: Point) {
         self.0.set_position(position);
     }
@@ -585,6 +584,13 @@ pub trait WinHandler {
     /// of the chosen path, or `None` if the save dialog was cancelled.
     #[allow(unused_variables)]
     fn open_file(&mut self, token: FileDialogToken, file: Option<FileInfo>) {}
+
+    /// Called when an "Open" dialog with multiple selection is closed.
+    ///
+    /// `token` is the value returned by [`WindowHandle::open_file`]. `files` contains the information
+    /// of the chosen paths, or `None` if the save dialog was cancelled.
+    #[allow(unused_variables)]
+    fn open_files(&mut self, token: FileDialogToken, files: Vec<FileInfo>) {}
 
     /// Called on a key down event.
     ///
@@ -697,8 +703,8 @@ pub trait WinHandler {
     fn as_any(&mut self) -> &mut dyn Any;
 }
 
-impl From<platform::WindowHandle> for WindowHandle {
-    fn from(src: platform::WindowHandle) -> WindowHandle {
+impl From<backend::WindowHandle> for WindowHandle {
+    fn from(src: backend::WindowHandle) -> WindowHandle {
         WindowHandle(src)
     }
 }

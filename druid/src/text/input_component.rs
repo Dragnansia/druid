@@ -61,7 +61,7 @@ const PROTECTED_TEXT_CHAR: char = '•';
 /// a lock is held will result in a panic.
 #[derive(Debug, Clone)]
 pub struct TextComponent<T> {
-    inner: Arc<RefCell<EditSession<T>>>,
+    edit_session: Arc<RefCell<EditSession<T>>>,
     lock: Arc<Cell<ImeLock>>,
     // HACK: because of the way focus works (it is managed higher up, in
     // whatever widget is controlling this) we can't rely on `is_focused` in
@@ -243,7 +243,7 @@ impl<T> TextComponent<T> {
     /// This method panics if there is an outstanding lock on the session.
     pub fn borrow_mut(&self) -> RefMut<'_, EditSession<T>> {
         assert!(self.can_write());
-        self.inner.borrow_mut()
+        self.edit_session.borrow_mut()
     }
 
     /// Attempt to borrow the inner [`EditSession`].
@@ -253,7 +253,7 @@ impl<T> TextComponent<T> {
     /// This method panics if there is an outstanding write lock on the session.
     pub fn borrow(&self) -> Ref<'_, EditSession<T>> {
         assert!(self.can_read());
-        self.inner.borrow()
+        self.edit_session.borrow()
     }
 }
 
@@ -264,7 +264,7 @@ impl<T: EditableText + TextStorage> TextComponent<T> {
     /// during [`LifeCycle::WidgetAdded`], and pass it this object.
     pub fn input_handler(&self) -> impl ImeHandlerRef {
         EditSessionRef {
-            inner: Arc::downgrade(&self.inner),
+            inner: Arc::downgrade(&self.edit_session),
             lock: self.lock.clone(),
         }
     }
@@ -358,6 +358,7 @@ impl<T: TextStorage + EditableText> Widget<T> for TextComponent<T> {
                 }
                 if let Some(selection) = selection {
                     self.borrow_mut().selection = selection;
+                    ctx.request_paint();
                 }
                 ctx.request_update();
             }
@@ -584,6 +585,11 @@ impl<T> EditSession<T> {
             // this codepath isn't used; if we used it we would have
             // to think a bit more about fonts
         }
+    }
+
+    /// The text alignment.
+    pub fn text_alignment(&self) -> TextAlignment {
+        self.alignment
     }
 
     /// Returns any invalidation action that should be passed to the platform.
@@ -1017,7 +1023,7 @@ impl<T> Default for TextComponent<T> {
         };
 
         TextComponent {
-            inner: Arc::new(RefCell::new(inner)),
+            edit_session: Arc::new(RefCell::new(inner)),
             lock: Arc::new(Cell::new(ImeLock::None)),
             has_focus: false,
         }

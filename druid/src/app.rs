@@ -23,6 +23,8 @@ use crate::win_handler::{AppHandler, AppState};
 use crate::window::WindowId;
 use crate::{AppDelegate, Data, Env, LocalizedString, Menu, Widget};
 
+use tracing::warn;
+
 use druid_shell::WindowState;
 
 /// A function that modifies the initial environment.
@@ -51,7 +53,7 @@ pub enum WindowSizePolicy {
 
 /// Window configuration that can be applied to a WindowBuilder, or to an existing WindowHandle.
 /// It does not include anything related to app data.
-#[derive(Debug)]
+#[derive(PartialEq)]
 pub struct WindowConfig {
     pub(crate) size_policy: WindowSizePolicy,
     pub(crate) size: Option<Size>,
@@ -183,7 +185,8 @@ impl<T: Data> AppLauncher<T> {
     ///
     /// # Panics
     ///
-    /// Panics if the subscriber fails to initialize.
+    /// Panics if the subscriber fails to initialize, for example if a `tracing`/`tracing_wasm`
+    /// global logger was already set.
     pub fn log_to_console(self) -> Self {
         #[cfg(not(target_arch = "wasm32"))]
         {
@@ -242,7 +245,7 @@ impl<T: Data> AppLauncher<T> {
         let mut env = self
             .l10n_resources
             .map(|it| Env::with_i10n(it.0, &it.1))
-            .unwrap_or_default();
+            .unwrap_or_else(Env::with_default_i10n);
 
         if let Some(f) = self.env_setup.take() {
             f(&mut env, &data);
@@ -403,7 +406,7 @@ impl WindowConfig {
             builder.set_transparent(transparent);
         }
 
-        if let Some(level) = self.level {
+        if let Some(level) = self.level.clone() {
             builder.set_level(level)
         }
 
@@ -437,8 +440,8 @@ impl WindowConfig {
             win_handle.set_position(position);
         }
 
-        if let Some(level) = self.level {
-            win_handle.set_level(level)
+        if self.level.is_some() {
+            warn!("Applying a level can only be done on window builders");
         }
 
         if let Some(state) = self.state {
@@ -579,6 +582,12 @@ impl<T: Data> WindowDesc<T> {
     /// Set initial state for the window.
     pub fn set_window_state(mut self, state: WindowState) -> Self {
         self.config = self.config.set_window_state(state);
+        self
+    }
+
+    /// Set the [`WindowConfig`] of window.
+    pub fn with_config(mut self, config: WindowConfig) -> Self {
+        self.config = config;
         self
     }
 

@@ -14,6 +14,9 @@
 
 //! Opening and closing windows and using window and context menus.
 
+// On Windows platform, don't show a console when opening the app.
+#![windows_subsystem = "windows"]
+
 use druid::widget::prelude::*;
 use druid::widget::{
     Align, BackgroundBrush, Button, Controller, ControllerHost, Flex, Label, Padding,
@@ -196,7 +199,7 @@ fn make_menu(_: Option<WindowId>, state: &State, _: &Env) -> Menu<State> {
     {
         base = druid::platform_menus::mac::menu_bar();
     }
-    #[cfg(any(target_os = "windows", target_os = "linux"))]
+    #[cfg(any(target_os = "windows", target_os = "linux", target_os = "openbsd"))]
     {
         base = base.entry(druid::platform_menus::win::file::default());
     }

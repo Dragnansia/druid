@@ -15,7 +15,7 @@
 //! Simple data-oriented GUI.
 //!
 //! Druid lets you build simple interactive graphical applications that
-//! can be deployed on Windows, macOS, Linux, and the web.
+//! can be deployed on Windows, macOS, Linux, OpenBSD and the web.
 //!
 //! Druid is built on top of [`druid-shell`], which implements all of the
 //! lower-level, platform-specific code, providing a common abstraction
@@ -97,7 +97,7 @@
 //!          which is made available via the [`im` module].
 //! * `svg` - Scalable Vector Graphics for icons and other scalable images using the [`usvg` crate].
 //! * `image` - Bitmap image support using the [`image` crate].
-//! * `x11` - Work-in-progress X11 Linux backend instead of GTK.
+//! * `x11` - Work-in-progress X11 for Linux and OpenBSD backend instead of GTK.
 //!
 //! Features can be added with `cargo`. For example, in your `Cargo.toml`:
 //! ```no_compile
@@ -105,6 +105,12 @@
 //! version = "0.7.0"
 //! features = ["im", "svg", "image"]
 //! ```
+//!
+//! # Note for Windows apps
+//!
+//! By default, Windows will open a console with your application's window. If you don't want
+//! the console to be shown, use `#![windows_subsystem = "windows"]` at the beginning of your
+//! crate.
 //!
 //! [`Widget`]: trait.Widget.html
 //! [`Data`]: trait.Data.html
@@ -121,13 +127,16 @@
 //! [`image` crate]: https://crates.io/crates/image
 
 #![deny(
-    broken_intra_doc_links,
+    rustdoc::broken_intra_doc_links,
     unsafe_code,
     clippy::trivially_copy_pass_by_ref
 )]
 #![warn(missing_docs)]
 #![allow(clippy::new_ret_no_self, clippy::needless_doctest_main)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
+#![doc(
+    html_logo_url = "https://raw.githubusercontent.com/linebender/druid/screenshots/images/doc_logo.png"
+)]
 
 // Allows to use macros from druid_derive in this crate
 extern crate self as druid;
@@ -156,8 +165,9 @@ mod command;
 mod contexts;
 mod core;
 mod data;
+pub mod debug_state;
 mod dialog;
-mod env;
+pub mod env;
 mod event;
 mod ext_event;
 mod localization;
@@ -174,7 +184,7 @@ mod win_handler;
 mod window;
 
 // Types from kurbo & piet that are required by public API.
-pub use kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
+pub use kurbo::{Affine, Insets, Point, Rect, RoundedRectRadii, Size, Vec2};
 pub use piet::{Color, ImageBuf, LinearGradient, RadialGradient, RenderContext, UnitPoint};
 
 // these are the types from shell that we expose; others we only use internally.
@@ -188,7 +198,10 @@ pub use shell::{
     WindowHandle, WindowLevel, WindowState,
 };
 
-pub use crate::core::WidgetPod;
+#[cfg(feature = "raw-win-handle")]
+pub use crate::shell::raw_window_handle::{HasRawWindowHandle, RawWindowHandle};
+
+pub use crate::core::{WidgetPod, WidgetState};
 pub use app::{AppLauncher, WindowConfig, WindowDesc, WindowSizePolicy};
 pub use app_delegate::{AppDelegate, DelegateCtx};
 pub use box_constraints::BoxConstraints;
@@ -209,7 +222,7 @@ pub use win_handler::DruidHandler;
 pub use window::{Window, WindowId};
 
 #[cfg(not(target_arch = "wasm32"))]
-pub(crate) use event::{StateCell, StateCheckFn};
+pub(crate) use event::{DebugStateCell, StateCell, StateCheckFn};
 
 #[deprecated(since = "0.8.0", note = "import from druid::text module instead")]
 pub use piet::{FontFamily, FontStyle, FontWeight, TextAlignment};

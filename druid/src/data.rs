@@ -88,7 +88,7 @@ use piet::ImageBuf;
 /// #[derive(Clone, Data)]
 /// struct PathEntry {
 ///     // There's no Data impl for PathBuf, but no problem
-///     #[data(same_fn = "PartialEq::eq")]
+///     #[data(eq)]
 ///     path: PathBuf,
 ///     priority: usize,
 ///     // This field is not part of our data model.
@@ -620,7 +620,7 @@ impl<T: Data, const N: usize> Data for [T; N] {
 #[cfg(test)]
 mod test {
     use super::Data;
-    use test_env_log::test;
+    use test_log::test;
 
     #[test]
     fn array_data() {

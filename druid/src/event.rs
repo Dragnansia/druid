@@ -345,6 +345,18 @@ pub enum InternalLifeCycle {
         /// a cell used to store the a widget's state
         state_cell: StateCell,
     },
+    /// For testing: request the `DebugState` of a specific widget.
+    ///
+    /// This is useful if you need to get a best-effort description of the
+    /// state of this widget and its children. You can dispatch this event,
+    /// specifying the widget in question, and that widget will
+    /// set its state in the provided `Cell`, if it exists.
+    DebugRequestDebugState {
+        /// the widget whose state is requested
+        widget: WidgetId,
+        /// a cell used to store the a widget's state
+        state_cell: DebugStateCell,
+    },
     /// For testing: apply the given function on every widget.
     DebugInspectState(StateCheckFn),
 }
@@ -397,8 +409,23 @@ impl Event {
         }
     }
 
-    /// Whether this event should be sent to widgets which are currently not visible
-    /// (for example the hidden tabs in a tabs widget).
+    /// Whether this event should be sent to widgets which are currently not visible and not
+    /// accessible.
+    ///
+    /// For example: the hidden tabs in a tabs widget are `hidden` whereas the non-visible
+    /// widgets in a scroll are not, since you can bring them into view by scrolling.
+    ///
+    /// This distinction between scroll and tabs is due to one of the main purposes of
+    /// this method: determining which widgets are allowed to receive focus. As a rule
+    /// of thumb a widget counts as `hidden` if it makes no sense for it to receive focus
+    /// when the user presses thee 'tab' key.
+    ///
+    /// If a widget changes which children are hidden it must call [`children_changed`].
+    ///
+    /// See also [`LifeCycle::should_propagate_to_hidden`].
+    ///
+    /// [`children_changed`]: crate::EventCtx::children_changed
+    /// [`LifeCycle::should_propagate_to_hidden`]: LifeCycle::should_propagate_to_hidden
     pub fn should_propagate_to_hidden(&self) -> bool {
         match self {
             Event::WindowConnected
@@ -424,8 +451,14 @@ impl Event {
 }
 
 impl LifeCycle {
-    /// Whether this event should be sent to widgets which are currently not visible
-    /// (for example the hidden tabs in a tabs widget).
+    /// Whether this event should be sent to widgets which are currently not visible and not
+    /// accessible.
+    ///
+    /// If a widget changes which children are `hidden` it must call [`children_changed`].
+    /// For a more detailed explanation of the `hidden` state, see [`Event::should_propagate_to_hidden`].
+    ///
+    /// [`children_changed`]: crate::EventCtx::children_changed
+    /// [`Event::should_propagate_to_hidden`]: Event::should_propagate_to_hidden
     pub fn should_propagate_to_hidden(&self) -> bool {
         match self {
             LifeCycle::Internal(internal) => internal.should_propagate_to_hidden(),
@@ -439,8 +472,14 @@ impl LifeCycle {
 }
 
 impl InternalLifeCycle {
-    /// Whether this event should be sent to widgets which are currently not visible
-    /// (for example the hidden tabs in a tabs widget).
+    /// Whether this event should be sent to widgets which are currently not visible and not
+    /// accessible.
+    ///
+    /// If a widget changes which children are `hidden` it must call [`children_changed`].
+    /// For a more detailed explanation of the `hidden` state, see [`Event::should_propagate_to_hidden`].
+    ///
+    /// [`children_changed`]: crate::EventCtx::children_changed
+    /// [`Event::should_propagate_to_hidden`]: Event::should_propagate_to_hidden
     pub fn should_propagate_to_hidden(&self) -> bool {
         match self {
             InternalLifeCycle::RouteWidgetAdded
@@ -448,21 +487,27 @@ impl InternalLifeCycle {
             | InternalLifeCycle::RouteDisabledChanged => true,
             InternalLifeCycle::ParentWindowOrigin => false,
             InternalLifeCycle::DebugRequestState { .. }
+            | InternalLifeCycle::DebugRequestDebugState { .. }
             | InternalLifeCycle::DebugInspectState(_) => true,
         }
     }
 }
 
-pub(crate) use state_cell::{StateCell, StateCheckFn};
+pub(crate) use state_cell::{DebugStateCell, StateCell, StateCheckFn};
 
 mod state_cell {
     use crate::core::WidgetState;
+    use crate::debug_state::DebugState;
     use crate::WidgetId;
     use std::{cell::RefCell, rc::Rc};
 
-    /// An interior-mutable struct for fetching BasteState.
+    /// An interior-mutable struct for fetching WidgetState.
     #[derive(Clone, Default)]
     pub struct StateCell(Rc<RefCell<Option<WidgetState>>>);
+
+    /// An interior-mutable struct for fetching DebugState.
+    #[derive(Clone, Default)]
+    pub struct DebugStateCell(Rc<RefCell<Option<DebugState>>>);
 
     #[derive(Clone)]
     pub struct StateCheckFn(Rc<dyn Fn(&WidgetState)>);
@@ -493,6 +538,21 @@ mod state_cell {
         }
     }
 
+    impl DebugStateCell {
+        /// Set the state. This will panic if it is called twice.
+        pub(crate) fn set(&self, state: DebugState) {
+            assert!(
+                self.0.borrow_mut().replace(state).is_none(),
+                "DebugStateCell already set"
+            )
+        }
+
+        #[allow(dead_code)]
+        pub(crate) fn take(&self) -> Option<DebugState> {
+            self.0.borrow_mut().take()
+        }
+    }
+
     impl StateCheckFn {
         #[cfg(not(target_arch = "wasm32"))]
         pub(crate) fn new(f: impl Fn(&WidgetState) + 'static) -> Self {
@@ -506,6 +566,8 @@ mod state_cell {
         }
     }
 
+    // TODO - Use fmt.debug_tuple?
+
     impl std::fmt::Debug for StateCell {
         fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
             let inner = if self.0.borrow().is_some() {
@@ -514,6 +576,17 @@ mod state_cell {
                 "None"
             };
             write!(f, "StateCell({})", inner)
+        }
+    }
+
+    impl std::fmt::Debug for DebugStateCell {
+        fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+            let inner = if self.0.borrow().is_some() {
+                "Some"
+            } else {
+                "None"
+            };
+            write!(f, "DebugStateCell({})", inner)
         }
     }
 
