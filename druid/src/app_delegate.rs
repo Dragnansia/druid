@@ -14,6 +14,7 @@
 
 //! Customizing application-level behaviour.
 
+use druid_shell::WindowHandle;
 use std::any::{Any, TypeId};
 
 use crate::{
@@ -128,7 +129,15 @@ pub trait AppDelegate<T: Data> {
     /// The handler for window creation events.
     /// This function is called after a window has been added,
     /// allowing you to customize the window creation behavior of your app.
-    fn window_added(&mut self, id: WindowId, data: &mut T, env: &Env, ctx: &mut DelegateCtx) {}
+    fn window_added(
+        &mut self,
+        id: WindowId,
+        handle: WindowHandle,
+        data: &mut T,
+        env: &Env,
+        ctx: &mut DelegateCtx,
+    ) {
+    }
 
     /// The handler for window deletion events.
     /// This function is called after a window has been removed.
