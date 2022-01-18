@@ -63,6 +63,8 @@ You can find its changes [documented below](#070---2021-01-01).
 - Build on OpenBSD ([#1993] by [@klemensn])
 - Scope: expose scoped state using state() and state_mut() ([#2082] by [@rjwittams]
 - Tabs: allow getting and setting the tab index of a Tabs widget ([#2082] by [@rjwittams]
+- `RangeSlider` and `Annotated` ([#1979] by [@xarvic])
+- Add `Checkbox::from_label` constructor ([#2111] by [@maurerdietmar])
 
 ### Changed
 
@@ -531,6 +533,7 @@ Last release without a changelog :(
 [@klemensn]: https://github.com/klemensn
 [@agentsim]: https://github.com/agentsim
 [@jplatte]: https://github.com/jplatte
+[@maurerdietmar]: https://github.com/maurerdietmar
 
 [#599]: https://github.com/linebender/druid/pull/599
 [#611]: https://github.com/linebender/druid/pull/611
@@ -776,7 +779,7 @@ Last release without a changelog :(
 [#1772]: https://github.com/linebender/druid/pull/1772
 [#1779]: https://github.com/linebender/druid/pull/1779
 [#1787]: https://github.com/linebender/druid/pull/1787
-[#1801]: https://github.com/linebender/druid/pull/1800
+[#1801]: https://github.com/linebender/druid/pull/1801
 [#1802]: https://github.com/linebender/druid/pull/1802
 [#1803]: https://github.com/linebender/druid/pull/1803
 [#1804]: https://github.com/linebender/druid/pull/1804
@@ -812,6 +815,8 @@ Last release without a changelog :(
 [#1996]: https://github.com/linebender/druid/pull/1996
 [#2036]: https://github.com/linebender/druid/pull/2036
 [#2064]: https://github.com/linebender/druid/pull/2064
+[#1979]: https://github.com/linebender/druid/pull/1979
+[#2111]: https://github.com/linebender/druid/pull/2111
 
 [Unreleased]: https://github.com/linebender/druid/compare/v0.7.0...master
 [0.7.0]: https://github.com/linebender/druid/compare/v0.6.0...v0.7.0

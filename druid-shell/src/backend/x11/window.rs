@@ -44,6 +44,7 @@ use x11rb::xcb_ffi::XCBConnection;
 #[cfg(feature = "raw-win-handle")]
 use raw_window_handle::{unix::XcbHandle, HasRawWindowHandle, RawWindowHandle};
 
+use crate::backend::shared::Timer;
 use crate::common_util::IdleCallback;
 use crate::dialog::FileDialogOptions;
 use crate::error::Error as ShellError;
@@ -61,7 +62,6 @@ use crate::{window, KeyEvent, ScaledArea};
 
 use super::application::Application;
 use super::menu::Menu;
-use super::util::Timer;
 
 /// A version of XCB's `xcb_visualtype_t` struct. This was copied from the [example] in x11rb; it
 /// is used to interoperate with cairo.
@@ -566,7 +566,7 @@ pub(crate) struct Window {
     /// The region that was invalidated since the last time we rendered.
     invalid: RefCell<Region>,
     /// Timers, sorted by "earliest deadline first"
-    timer_queue: Mutex<BinaryHeap<Timer>>,
+    timer_queue: Mutex<BinaryHeap<Timer<()>>>,
     idle_queue: Arc<Mutex<Vec<IdleKind>>>,
     // Writing to this wakes up the event loop, so that it can run idle handlers.
     idle_pipe: RawFd,
@@ -1746,7 +1746,7 @@ impl WindowHandle {
 
     pub fn request_timer(&self, deadline: Instant) -> TimerToken {
         if let Some(w) = self.window.upgrade() {
-            let timer = Timer::new(deadline);
+            let timer = Timer::new(deadline, ());
             w.timer_queue.lock().unwrap().push(timer);
             timer.token()
         } else {

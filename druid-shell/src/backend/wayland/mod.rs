@@ -1,4 +1,4 @@
-// Copyright 2020 The Druid Authors.
+// Copyright 2019 The Druid Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,19 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Logic that is shared by more than one backend.
+//! wayland platform support
 
-cfg_if::cfg_if! {
-    if #[cfg(any(target_os = "macos", target_os = "linux", target_os = "openbsd"))] {
-        mod keyboard;
-        pub use keyboard::*;
-    }
+pub mod application;
+pub mod clipboard;
+mod display;
+pub mod error;
+mod events;
+pub mod keyboard;
+pub mod menu;
+mod outputs;
+pub mod pointers;
+pub mod screen;
+pub mod surfaces;
+pub mod window;
+
+/// Little enum to make it clearer what some return values mean.
+#[derive(Copy, Clone)]
+enum Changed {
+    Changed,
+    Unchanged,
 }
-cfg_if::cfg_if! {
-    if #[cfg(all(target_os = "linux", any(feature = "x11", feature = "wayland")))] {
-        mod timer;
-        pub(crate) use timer::*;
-        pub(crate) mod xkb;
-        pub(crate) mod linux;
+
+impl Changed {
+    fn is_changed(self) -> bool {
+        matches!(self, Changed::Changed)
     }
 }
