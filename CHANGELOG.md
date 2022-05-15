@@ -65,6 +65,12 @@ You can find its changes [documented below](#070---2021-01-01).
 - Tabs: allow getting and setting the tab index of a Tabs widget ([#2082] by [@rjwittams]
 - `RangeSlider` and `Annotated` ([#1979] by [@xarvic])
 - Add `Checkbox::from_label` constructor ([#2111] by [@maurerdietmar])
+- fix content_insets for gtk backend ([#2117] by [@maurerdietmar])
+- `ClipBox::managed`, `Notification::warn_if_ununsed` and `Notification::warn_if_ununsed_set` ([#2141] by [@xarvic])
+- `ClipBox` and `Tabs` handle SCROLL_TO_VIEW ([#2141] by [@xarvic])
+- `EventCtx::submit_notification_without_warning` ([#2141] by [@xarvic])
+- `WidgetPod::requested_layout` ([#2145] by [@xarvic])
+- Make `Parse` work better with floats and similar types ([#2148] by [@superfell])
 
 ### Changed
 
@@ -88,6 +94,12 @@ You can find its changes [documented below](#070---2021-01-01).
 - Add parent windows to non-main windows. (Coordinate space is now from their origin) ([#1919] by [@JAicewizard])
 - `ListIter` implementations for `Arc<Vec<T>>`, `(S, Arc<Vec<T>>)`, `Arc<VecDequeue<T>>` and `(S, Arc<VecDequeue<T>>)` ([#1967] by [@xarvic])
 - Closures passed to `Label::new` can now return any type that implements `Into<ArcStr>` ([#2064] by [@jplatte])
+- `AppDelegate::window_added` now receives the new window's `WindowHandle`. ([#2119] by [@zedseven])
+- Removed line of code that prevented window miximalization. ([#2113] by [@Pavel-N])
+- Dont warn about unhandled `Notification`s which have `known_target` set to false ([#2141] by [@xarvic])
+- `ClipBox`, `Flex`, `List` and `Split` only call layout on children which need it ([#2145] by [@xarvic]) 
+- `SizedBox` now supports using `Key<f64>` for specifying  size ([#2151] by [@GoldsteinE])
+- `RadioGroup` widgets are now constructed with new `row()`, `column()`, and `for_axis()` methods ([#2157] by [@twitchyliquid64])
 
 ### Deprecated
 
@@ -115,6 +127,7 @@ You can find its changes [documented below](#070---2021-01-01).
 - GTK: fix using gdk before initialising it ([#1946] by [@JAicewizard])
 - `ListIter` implementations for `Vector<T>` and `(S, Vector<T>)` ([#1967] by [@xarvic])
 - Do not panic in Application::try_global if Application is not created ([#1996] by [@Maan2003])
+- X11: window focus events ([#1938] by [@Maan2003]
 
 ### Visual
 
@@ -129,6 +142,7 @@ You can find its changes [documented below](#070---2021-01-01).
 - Updated source code, tests and docs to use `Selector::with` instead of `Command::new` ([#1761] by [@arthmis])
 - Updated docs of `should_propagate_to_hidden`, `children_changed` and `register_for_focus` ([#1861] by [@xarvic])
 - Update docs of `RawLabel`: does not require `ArcStr`([#1886] by [@Maan2003])
+- Fix `Controller` links for `Click` ([#2158] by [@yrns])
 
 ### Examples
 - Add readme ([#1423] by [@JAicewizard])
@@ -533,7 +547,12 @@ Last release without a changelog :(
 [@klemensn]: https://github.com/klemensn
 [@agentsim]: https://github.com/agentsim
 [@jplatte]: https://github.com/jplatte
+[@zedseven]: https://github.com/zedseven
+[@Pavel-N]: https://github.com/Pavel-N
 [@maurerdietmar]: https://github.com/maurerdietmar
+[@superfell]: https://github.com/superfell
+[@GoldsteinE]: https://github.com/GoldsteinE
+[@twitchyliquid64]: https://github.com/twitchyliquid64
 
 [#599]: https://github.com/linebender/druid/pull/599
 [#611]: https://github.com/linebender/druid/pull/611
@@ -806,6 +825,7 @@ Last release without a changelog :(
 [#1907]: https://github.com/linebender/druid/pull/1907
 [#1919]: https://github.com/linebender/druid/pull/1919
 [#1929]: https://github.com/linebender/druid/pull/1929
+[#1938]: https://github.com/linebender/druid/pull/1938
 [#1947]: https://github.com/linebender/druid/pull/1947
 [#1953]: https://github.com/linebender/druid/pull/1953
 [#1967]: https://github.com/linebender/druid/pull/1967
@@ -816,7 +836,15 @@ Last release without a changelog :(
 [#2036]: https://github.com/linebender/druid/pull/2036
 [#2064]: https://github.com/linebender/druid/pull/2064
 [#1979]: https://github.com/linebender/druid/pull/1979
+[#2119]: https://github.com/linebender/druid/pull/2119
 [#2111]: https://github.com/linebender/druid/pull/2111
+[#2117]: https://github.com/linebender/druid/pull/2117
+[#2117]: https://github.com/linebender/druid/pull/2141
+[#2145]: https://github.com/linebender/druid/pull/2145
+[#2148]: https://github.com/linebender/druid/pull/2148
+[#2151]: https://github.com/linebender/druid/pull/2151
+[#2157]: https://github.com/linebender/druid/pull/2157
+[#2158]: https://github.com/linebender/druid/pull/2158
 
 [Unreleased]: https://github.com/linebender/druid/compare/v0.7.0...master
 [0.7.0]: https://github.com/linebender/druid/compare/v0.6.0...v0.7.0

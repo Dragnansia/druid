@@ -19,7 +19,7 @@ use std::any::{Any, TypeId};
 
 use crate::{
     commands, core::CommandQueue, ext_event::ExtEventHost, Command, Data, Env, Event, ExtEventSink,
-    Handled, SingleUse, Target, WindowDesc, WindowId,
+    Handled, SingleUse, Target, WindowDesc, WindowHandle, WindowId,
 };
 
 /// A context passed in to [`AppDelegate`] functions.

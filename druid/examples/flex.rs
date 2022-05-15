@@ -43,11 +43,12 @@ const MAIN_AXIS_ALIGNMENT_OPTIONS: [(&str, MainAxisAlignment); 6] = [
     ("Evenly", MainAxisAlignment::SpaceEvenly),
     ("Around", MainAxisAlignment::SpaceAround),
 ];
-const CROSS_AXIS_ALIGNMENT_OPTIONS: [(&str, CrossAxisAlignment); 4] = [
+const CROSS_AXIS_ALIGNMENT_OPTIONS: [(&str, CrossAxisAlignment); 5] = [
     ("Start", CrossAxisAlignment::Start),
     ("Center", CrossAxisAlignment::Center),
     ("End", CrossAxisAlignment::End),
     ("Baseline", CrossAxisAlignment::Baseline),
+    ("Fill", CrossAxisAlignment::Fill),
 ];
 const FLEX_TYPE_OPTIONS: [(&str, FlexType); 2] =
     [("Row", FlexType::Row), ("Column", FlexType::Column)];
@@ -157,7 +158,7 @@ fn make_control_row() -> impl Widget<AppState> {
                 .cross_axis_alignment(CrossAxisAlignment::Start)
                 .with_child(Label::new("Type:"))
                 .with_default_spacer()
-                .with_child(RadioGroup::new(FLEX_TYPE_OPTIONS.to_vec()).lens(Params::axis)),
+                .with_child(RadioGroup::column(FLEX_TYPE_OPTIONS.to_vec()).lens(Params::axis)),
         )
         .with_default_spacer()
         .with_child(
@@ -166,7 +167,7 @@ fn make_control_row() -> impl Widget<AppState> {
                 .with_child(Label::new("CrossAxis:"))
                 .with_default_spacer()
                 .with_child(
-                    RadioGroup::new(CROSS_AXIS_ALIGNMENT_OPTIONS.to_vec())
+                    RadioGroup::column(CROSS_AXIS_ALIGNMENT_OPTIONS.to_vec())
                         .lens(Params::cross_alignment),
                 ),
         )
@@ -177,7 +178,7 @@ fn make_control_row() -> impl Widget<AppState> {
                 .with_child(Label::new("MainAxis:"))
                 .with_default_spacer()
                 .with_child(
-                    RadioGroup::new(MAIN_AXIS_ALIGNMENT_OPTIONS.to_vec())
+                    RadioGroup::column(MAIN_AXIS_ALIGNMENT_OPTIONS.to_vec())
                         .lens(Params::main_alignment),
                 ),
         )
@@ -208,7 +209,7 @@ fn make_spacer_select() -> impl Widget<Params> {
         .cross_axis_alignment(CrossAxisAlignment::Start)
         .with_child(Label::new("Insert Spacers:"))
         .with_default_spacer()
-        .with_child(RadioGroup::new(SPACER_OPTIONS.to_vec()).lens(Params::spacers))
+        .with_child(RadioGroup::column(SPACER_OPTIONS.to_vec()).lens(Params::spacers))
         .with_default_spacer()
         .with_child(
             Flex::row()
